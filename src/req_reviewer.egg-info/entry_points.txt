@@ -1,0 +1,2 @@
+[console_scripts]
+req-reviewer = req_reviewer.cli:main
