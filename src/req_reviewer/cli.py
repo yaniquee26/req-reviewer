@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from req_reviewer.loader import load_requirements
+from req_reviewer.rules import extract_length_rule, generate_values
 
 
 def main(argv=None) -> int:
@@ -20,6 +21,12 @@ def main(argv=None) -> int:
 
     print(f"Загружено символов: {len(text)}")
     print(text)
+
+    rule = extract_length_rule(text)
+    print(f"Правило длины: min={rule.min_len}, max={rule.max_len}")
+    print("Тестовые значения (граничные):")
+    for tv in generate_values(text):
+        print(f"  [{tv.expected:6}] {tv.note:10} -> {tv.value!r}")
     return 0
 
 
