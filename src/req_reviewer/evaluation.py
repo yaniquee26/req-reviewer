@@ -125,7 +125,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     cases = load_cases(args.cases)
-    client = OllamaClient(model=args.model)
+    client = OllamaClient(model=args.model, temperature=0.0, seed=42)
     results = run_eval(cases, client, progress=print)
 
     s = summarize(results)
