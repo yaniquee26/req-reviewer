@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from req_reviewer.exporter import save_outputs
 from req_reviewer.llm import LLMError, OllamaClient
 from req_reviewer.loader import load_requirements
 from req_reviewer.reviewer import find_ambiguities
@@ -17,6 +18,9 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--no-llm", action="store_true", help="только правила из кода, без модели"
     )
+    parser.add_argument(
+        "--out", help="папка, куда сохранить report.md, testcases.csv и testcases.xlsx"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -29,24 +33,30 @@ def main(argv=None) -> int:
     print(text)
 
     rule = extract_length_rule(text)
+    values = generate_values(text)
     print(f"\nПравило длины: min={rule.min_len}, max={rule.max_len}")
     print("Тестовые значения (граничные):")
-    for tv in generate_values(text):
+    for tv in values:
         print(f"  [{tv.expected:6}] {tv.note:10} -> {tv.value!r}")
 
-    if args.no_llm:
-        return 0
+    questions = None
+    if not args.no_llm:
+        print("\nВопросы к аналитику (гипотезы модели, проверь сам):")
+        try:
+            questions = find_ambiguities(text, OllamaClient(model=args.model))
+        except LLMError as err:
+            print(f"  Модель недоступна: {err}", file=sys.stderr)
+        else:
+            if not questions:
+                print("  Неясностей не найдено.")
+            for i, q in enumerate(questions, 1):
+                print(f"  {i}. {q}")
 
-    print("\nВопросы к аналитику (гипотезы модели, проверь сам):")
-    try:
-        questions = find_ambiguities(text, OllamaClient(model=args.model))
-    except LLMError as err:
-        print(f"  Модель недоступна: {err}", file=sys.stderr)
-        return 0
-    if not questions:
-        print("  Неясностей не найдено.")
-    for i, q in enumerate(questions, 1):
-        print(f"  {i}. {q}")
+    if args.out:
+        report, table, xlsx = save_outputs(
+            args.out, args.file, text, rule, values, questions
+        )
+        print(f"\nСохранено: {report}, {table}, {xlsx}")
     return 0
 
 

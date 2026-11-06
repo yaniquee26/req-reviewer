@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "req-reviewer"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["requests"]
+dependencies = ["requests", "openpyxl"]
 
 [project.scripts]
 req-reviewer = "req_reviewer.cli:main"
