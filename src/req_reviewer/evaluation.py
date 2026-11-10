@@ -118,6 +118,20 @@ def build_markdown(results: list[CaseResult], model: str, prompt: str = "v1") ->
     ]
     return "\n".join(lines)
 
+def build_details(results: list[CaseResult]) -> str:
+    lines = ["", "## Что спросила модель", ""]
+    for r in results:
+        lines.append(f"### {r.case_id} {r.title}")
+        lines.append("")
+        if r.error:
+            lines.append(f"Ошибка: {r.error}")
+        elif not r.questions:
+            lines.append("Вопросов нет.")
+        else:
+            for i, q in enumerate(r.questions, 1):
+                lines.append(f"{i}. {q}")
+        lines.append("")
+    return "\n".join(lines)
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="req-reviewer-eval")
@@ -138,7 +152,10 @@ def main(argv=None) -> int:
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(build_markdown(results, args.model, args.prompt), encoding="utf-8")
+    out.write_text(
+        build_markdown(results, args.model, args.prompt) + build_details(results),
+        encoding="utf-8",
+    )    
     print(f"\nПолнота: {s['found']} из {s['expected']} ({s['recall']:.0%})")
     print(f"Вопросов по теме: {s['relevant']} из {s['questions']} ({s['precision']:.0%})")
     print(f"Сохранено: {out}")
