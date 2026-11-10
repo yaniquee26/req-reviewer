@@ -20,6 +20,10 @@ Output:
 
 A ready-made example is in [`docs/sample`](docs/sample).
 
+![Terminal output](docs/demo-terminal.png)
+
+![Generated test cases in Excel](docs/demo-xlsx.png)
+
 ## Design idea
 
 Code does what must be exact (parsing numbers, computing boundary values). The model does what is flexible (spotting what the text does not say). The human reviews the result. Requirement text is passed to the model inside a `<data>` block with an instruction to treat it as data only, which reduces prompt-injection risk.
