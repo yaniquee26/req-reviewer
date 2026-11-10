@@ -137,7 +137,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="req-reviewer-eval")
     parser.add_argument("--cases", default="eval/cases.json")
     parser.add_argument("--model", default="gemma3:4b")
-    parser.add_argument("--prompt", default="v1", choices=["v1", "v2"])
+    parser.add_argument("--prompt", default="v1", choices=["v1", "v2", "v3"])
     parser.add_argument("--out", default="eval/results.md")
     args = parser.parse_args(argv)
 
