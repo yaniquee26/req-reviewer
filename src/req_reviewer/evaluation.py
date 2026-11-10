@@ -47,13 +47,15 @@ def score_case(case: dict, questions: list[str]) -> CaseResult:
     )
 
 
-def run_eval(cases: list[dict], client, progress=None) -> list[CaseResult]:
+def run_eval(
+    cases: list[dict], client, progress=None, prompt: str = "v1"
+) -> list[CaseResult]:
     results = []
     for i, case in enumerate(cases, 1):
         if progress:
             progress(f"[{i}/{len(cases)}] {case['id']} {case['title']}")
         try:
-            questions = find_ambiguities(case["text"], client)
+            questions = find_ambiguities(case["text"], client, prompt)
         except LLMError as err:
             results.append(CaseResult(case["id"], case["title"], error=str(err)))
             continue
@@ -79,12 +81,12 @@ def summarize(results: list[CaseResult]) -> dict:
     }
 
 
-def build_markdown(results: list[CaseResult], model: str) -> str:
+def build_markdown(results: list[CaseResult], model: str, prompt: str = "v1") -> str:
     s = summarize(results)
     lines = [
         "# Оценка качества поиска неясностей",
         "",
-        f"Модель: `{model}`. Кейсов обработано: {s['cases_ok']}, с ошибкой: {s['cases_failed']}.",
+        f"Модель: `{model}`, подсказка: {prompt}. Кейсов обработано: {s['cases_ok']}, с ошибкой: {s['cases_failed']}.",
         "",
         "| Кейс | Найдено тем | Вопросов | По теме | Пропущено |",
         "|---|---|---|---|---|",
@@ -121,12 +123,13 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="req-reviewer-eval")
     parser.add_argument("--cases", default="eval/cases.json")
     parser.add_argument("--model", default="gemma3:4b")
+    parser.add_argument("--prompt", default="v1", choices=["v1", "v2"])
     parser.add_argument("--out", default="eval/results.md")
     args = parser.parse_args(argv)
 
     cases = load_cases(args.cases)
     client = OllamaClient(model=args.model, temperature=0.0, seed=42)
-    results = run_eval(cases, client, progress=print)
+    results = run_eval(cases, client, progress=print, prompt=args.prompt)
 
     s = summarize(results)
     if s["cases_ok"] == 0:
@@ -135,7 +138,7 @@ def main(argv=None) -> int:
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(build_markdown(results, args.model), encoding="utf-8")
+    out.write_text(build_markdown(results, args.model, args.prompt), encoding="utf-8")
     print(f"\nПолнота: {s['found']} из {s['expected']} ({s['recall']:.0%})")
     print(f"Вопросов по теме: {s['relevant']} из {s['questions']} ({s['precision']:.0%})")
     print(f"Сохранено: {out}")
